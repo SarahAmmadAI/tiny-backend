@@ -11,4 +11,4 @@ A minimal Express server with two JSON endpoints.
 npm install
 node server.js
 ​```
-Then visit `http://localhost:3000` or `http://localhost:3000/status`.
+
