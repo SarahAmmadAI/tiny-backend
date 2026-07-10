@@ -1,5 +1,5 @@
-# Tiny Backend
 
+<<<<<<< HEAD
 A minimal Express server with two JSON endpoints.
 
 ## Endpoints
@@ -12,3 +12,5 @@ npm install
 node server.js
 ​```
 
+=======
+>>>>>>> f0e4f31d68983ce5365c75fbe501c08fbb3379f5
