@@ -7,8 +7,6 @@ const db = require('./db');
 
 app.use(express.json()); // parses incoming JSON request bodies
 
-let nextId = 4; // still used by POST until Stage 2 converts it
-
 // Read
 app.get('/tasks', (req, res) => {
   const tasks = db.prepare('SELECT * FROM tasks').all();
@@ -26,7 +24,7 @@ app.get('/tasks/:id', (req, res) => {
   res.json(task);
 });
 
-// Create — still in-memory for now, converts in Stage 2
+// Create
 let tasks = [];
 app.post('/tasks', (req, res) => {
   const { title } = req.body;
@@ -35,12 +33,13 @@ app.post('/tasks', (req, res) => {
     return res.status(400).json({ error: "Title is required" });
   }
 
-  const newTask = { id: nextId++, title, done: false };
-  tasks.push(newTask);
+  const insert = db.prepare('INSERT INTO tasks (title, done) VALUES (?, ?)');
+  const result = insert.run(title, 0);
+
+  const newTask = db.prepare('SELECT * FROM tasks WHERE id = ?').get(result.lastInsertRowid);
 
   res.status(201).json(newTask);
 });
-
 // Update
 app.put('/tasks/:id', (req, res) => {
   const id = parseInt(req.params.id);
@@ -88,4 +87,9 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiDocument));
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
+});
+
+process.on('SIGINT', () => {
+  db.close();
+  process.exit();
 });
