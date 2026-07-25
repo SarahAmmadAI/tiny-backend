@@ -3,38 +3,21 @@ const app = express();
 const PORT = 3000;
 const swaggerUi = require('swagger-ui-express');
 const openapiDocument = require('./openapi.json');
+const db = require('./db');
 
 app.use(express.json()); // parses incoming JSON request bodies
 
-// In-memory "database"
-let tasks = [
-  { id: 1, title: "Buy milk", done: false },
-  { id: 2, title: "Walk the dog", done: false },
-  { id: 3, title: "Finish assignment", done: true }
-];
-
-let nextId = 4;
-
-app.get('/', (req, res) => {
-  res.json({ name: "Task API", version: "1.0", endpoints: ["/tasks"] });
-});
-
-app.get('/status', (req, res) => {
-  res.json({ status: "ok", time: new Date().toISOString() });
-});
-
-app.get('/health', (req, res) => {
-  res.json({ status: "ok" });
-});
+let nextId = 4; // still used by POST until Stage 2 converts it
 
 // Read
 app.get('/tasks', (req, res) => {
+  const tasks = db.prepare('SELECT * FROM tasks').all();
   res.json(tasks);
 });
 
 app.get('/tasks/:id', (req, res) => {
   const id = parseInt(req.params.id);
-  const task = tasks.find(t => t.id === id);
+  const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
 
   if (!task) {
     return res.status(404).json({ error: `Task ${id} not found` });
@@ -43,7 +26,8 @@ app.get('/tasks/:id', (req, res) => {
   res.json(task);
 });
 
-// Create
+// Create — still in-memory for now, converts in Stage 2
+let tasks = [];
 app.post('/tasks', (req, res) => {
   const { title } = req.body;
 
