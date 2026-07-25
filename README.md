@@ -45,3 +45,30 @@ Content-Type: application/json; charset=utf-8
 ![Swagger UI screenshot](swagger-screenshot.png)
 
 The full CRUD cycle (create, read, update, delete) can be tested directly from `/docs` using the "Try it out" button on each endpoint.
+
+## Database
+
+This project now uses SQLite instead of an in-memory array for storing tasks.
+
+- **Why SQLite:** it requires no separate server or installation — the entire database lives in a single file, making it ideal for a small project like this. It's built into Node.js via the `node:sqlite` module, so no external native dependencies are needed.
+- **Where the data lives:** `tasks.db`, in the project root. It's created automatically on first run if it doesn't exist.
+- **How to start the project:**
+```bash
+  npm install
+  node server.js
+```
+  The database and `tasks` table are created automatically, with 3 example tasks seeded only if the table is empty.
+
+### Example SQL query
+
+```sql
+SELECT * FROM tasks WHERE done = 1;
+```
+
+Returns every task marked as completed.
+
+### Database viewer
+
+![DB Browser for SQLite screenshot](db-browser-screenshot.png)
+
+Verified that changes made directly in the database (via DB Browser for SQLite) are immediately reflected through the API, confirming the API and database share the same underlying data.
