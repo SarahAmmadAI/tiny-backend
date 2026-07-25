@@ -33,3 +33,14 @@ curl -i http://localhost:3000/tasks/1
 ```
 
 Response:
+
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+
+{"id":1,"title":"Buy milk","done":false}
+
+## Swagger UI
+
+![Swagger UI screenshot](swagger-screenshot.png)
+
+The full CRUD cycle (create, read, update, delete) can be tested directly from `/docs` using the "Try it out" button on each endpoint.
