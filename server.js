@@ -1,9 +1,16 @@
+require('dotenv').config();
 const express = require('express');
 const app = express();
 const PORT = 3000;
 const swaggerUi = require('swagger-ui-express');
 const openapiDocument = require('./openapi.json');
 const db = require('./db');
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
 
 app.use(express.json()); // parses incoming JSON request bodies
 
@@ -25,7 +32,6 @@ app.get('/tasks/:id', (req, res) => {
 });
 
 // Create
-
 app.post('/tasks', (req, res) => {
   const { title } = req.body;
 
@@ -40,6 +46,8 @@ app.post('/tasks', (req, res) => {
 
   res.status(201).json(newTask);
 });
+
+// Update
 app.put('/tasks/:id', (req, res) => {
   const id = parseInt(req.params.id);
   const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
@@ -68,6 +76,7 @@ app.put('/tasks/:id', (req, res) => {
   res.json(updatedTask);
 });
 
+// Delete
 app.delete('/tasks/:id', (req, res) => {
   const id = parseInt(req.params.id);
   const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
@@ -84,7 +93,7 @@ app.delete('/tasks/:id', (req, res) => {
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiDocument));
 
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Server running and connected to Supabase on port ${PORT}`);
 });
 
 process.on('SIGINT', () => {
