@@ -33,11 +33,12 @@ curl -i http://localhost:3000/tasks/1
 ```
 
 Response:
-
+```
 HTTP/1.1 200 OK
 Content-Type: application/json; charset=utf-8
 
 {"id":1,"title":"Buy milk","done":false}
+```
 
 ## Swagger UI
 
