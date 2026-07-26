@@ -6,6 +6,7 @@ const swaggerUi = require('swagger-ui-express');
 const openapiDocument = require('./openapi.json');
 const db = require('./db');
 const { createClient } = require('@supabase/supabase-js');
+const crypto = require('crypto');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -104,6 +105,71 @@ app.get('/protected/profile', requireAuth, (req, res) => {
 
 app.get('/protected/dashboard', requireAuth, (req, res) => {
   res.status(200).json({ message: `Welcome to your dashboard, ${req.user.email}` });
+});
+
+// ===== Background Jobs =====
+
+const jobs = new Map();
+const MAX_ATTEMPTS = 3;
+
+function createJob() {
+  const id = crypto.randomUUID();
+  const job = {
+    id,
+    status: "queued", // queued -> processing -> completed | failed
+    result: null,
+    error: null,
+    attempts: 0,
+    createdAt: new Date().toISOString(),
+  };
+  jobs.set(id, job);
+  return job;
+}
+
+// Simulates a slow, occasionally-failing task (stand-in for a real AI call)
+// Retries automatically up to MAX_ATTEMPTS before permanently failing
+function simulateSlowWork(job) {
+  job.status = "processing";
+  job.attempts += 1;
+
+  setTimeout(() => {
+    const shouldFail = Math.random() < 0.3; // 30% chance of failure
+
+    if (shouldFail) {
+      if (job.attempts < MAX_ATTEMPTS) {
+        console.log(`Job ${job.id} failed (attempt ${job.attempts}), retrying...`);
+        simulateSlowWork(job); // retry
+      } else {
+        job.status = "failed";
+        job.error = `Failed after ${job.attempts} attempts`;
+        console.error(`ALERT: Job ${job.id} permanently failed after ${MAX_ATTEMPTS} attempts`);
+      }
+    } else {
+      job.status = "completed";
+      job.result = { message: "Slow task finished", processedAt: new Date().toISOString() };
+    }
+  }, 5000);
+}
+
+app.post('/jobs/simulate', (req, res) => {
+  const job = createJob();
+  simulateSlowWork(job);
+
+  res.status(202).json({
+    id: job.id,
+    status: job.status,
+    message: "Job accepted, check status at /jobs/:id"
+  });
+});
+
+app.get('/jobs/:id', (req, res) => {
+  const job = jobs.get(req.params.id);
+
+  if (!job) {
+    return res.status(404).json({ error: "Job not found" });
+  }
+
+  res.status(200).json(job);
 });
 
 // Read

@@ -107,3 +107,33 @@ Protected routes require a header: `Authorization: Bearer <your_access_token>`. 
 Visit `/docs` and click **Authorize** to paste your token — all protected routes will then work directly through "Try it out."
 
 ![Swagger UI with bearer auth](swagger-auth-screenshot.png)
+
+## Background Jobs
+
+Slow operations run as background jobs instead of blocking the request. The endpoint responds instantly with `202 Accepted`, and a separate status endpoint reports progress.
+
+### How it works
+
+1. `POST /jobs/simulate` — starts a simulated slow task (stands in for a real slow operation like an AI call). Returns `202` immediately with a job `id`.
+2. The job processes in the background for ~5 seconds per attempt.
+3. `GET /jobs/:id` — check the job's current status at any time: `queued`, `processing`, `completed`, or `failed`.
+
+### Reliability
+
+- **Failures happen**: the simulated task fails ~30% of the time, to mimic real-world unreliability (network errors, timeouts, etc.).
+- **Retries**: a failed job automatically retries up to 3 times before being marked permanently `failed`.
+- **Alerts**: a permanently failed job logs an `ALERT:` message to the server console — in production, this would trigger a real notification (Slack, email, monitoring system).
+
+### Example
+
+```bash
+curl -i -X POST http://localhost:3000/jobs/simulate
+# {"id": "abc-123", "status": "processing", ...}
+
+curl -i http://localhost:3000/jobs/abc-123
+# {"id": "abc-123", "status": "completed", "result": {...}, "attempts": 1}
+```
+
+### Limitations
+
+Jobs are stored in memory and are lost on server restart — a production system would use a persistent queue (e.g., Redis, a database table) so jobs survive restarts and can be processed by multiple workers.
