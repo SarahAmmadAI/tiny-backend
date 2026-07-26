@@ -48,7 +48,7 @@ The full CRUD cycle (create, read, update, delete) can be tested directly from `
 
 ## Database
 
-This project now uses SQLite instead of an in-memory array for storing tasks.
+This project uses SQLite instead of an in-memory array for storing tasks.
 
 - **Why SQLite:** it requires no separate server or installation — the entire database lives in a single file, making it ideal for a small project like this. It's built into Node.js via the `node:sqlite` module, so no external native dependencies are needed.
 - **Where the data lives:** `tasks.db`, in the project root. It's created automatically on first run if it doesn't exist.
@@ -82,7 +82,6 @@ This project uses Supabase Auth to manage user accounts and issue JWTs.
 1. Create a free project at [supabase.com](https://supabase.com).
 2. Copy your Project URL and publishable (anon) key from **Project Settings → API**.
 3. Copy `.env.example` to `.env` and fill in your own values:
-
 ```
    SUPABASE_URL=your_supabase_project_url
    SUPABASE_KEY=your_supabase_publishable_key
