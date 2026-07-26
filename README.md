@@ -1,6 +1,6 @@
 # Task API
 
-A minimal CRUD API for managing tasks, built with Express.js. Tasks are stored in memory (no database yet — that's next in the FlyRank Backend AI Engineering track).
+A minimal CRUD API for managing tasks, built with Express.js, with SQLite persistence and Supabase authentication.
 
 ## Endpoints
 
@@ -72,3 +72,39 @@ Returns every task marked as completed.
 ![DB Browser for SQLite screenshot](db-browser-screenshot.png)
 
 Verified that changes made directly in the database (via DB Browser for SQLite) are immediately reflected through the API, confirming the API and database share the same underlying data.
+
+## Authentication
+
+This project uses Supabase Auth to manage user accounts and issue JWTs.
+
+### Setup
+
+1. Create a free project at [supabase.com](https://supabase.com).
+2. Copy your Project URL and publishable (anon) key from **Project Settings → API**.
+3. Copy `.env.example` to `.env` and fill in your own values:
+
+```
+   SUPABASE_URL=your_supabase_project_url
+   SUPABASE_KEY=your_supabase_publishable_key
+   PORT=3000
+```
+4. Run `npm install` then `node server.js`.
+
+### Auth Endpoints
+
+| Method | Endpoint              | Auth Required | Description                        |
+|--------|------------------------|----------------|-------------------------------------|
+| POST   | `/auth/signup`         | No             | Create a new user account          |
+| POST   | `/auth/login`          | No             | Log in, returns access_token       |
+| POST   | `/auth/logout`         | Yes (Bearer)   | Terminate the current session      |
+| GET    | `/public/info`         | No             | Public, unprotected data           |
+| GET    | `/protected/profile`   | Yes (Bearer)   | Read the logged-in user's profile  |
+| GET    | `/protected/dashboard` | Yes (Bearer)   | Example second protected route     |
+
+Protected routes require a header: `Authorization: Bearer <your_access_token>`. Get a token by calling `/auth/login`.
+
+### Swagger UI
+
+Visit `/docs` and click **Authorize** to paste your token — all protected routes will then work directly through "Try it out."
+
+![Swagger UI with bearer auth](swagger-auth-screenshot.png)
