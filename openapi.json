@@ -3,7 +3,7 @@
   "info": {
     "title": "Task API",
     "version": "1.0.0",
-    "description": "A simple CRUD API for managing tasks, now with Supabase authentication"
+    "description": "A simple CRUD API for managing tasks, now with Supabase authentication and billing."
   },
   "components": {
     "securitySchemes": {
@@ -24,157 +24,285 @@
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": ["email", "password"],
                 "properties": {
-                  "email": { "type": "string" },
-                  "password": { "type": "string" }
-                },
-                "required": ["email", "password"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": { "description": "User created" },
-          "400": { "description": "Missing or invalid input" }
-        }
-      }
-    },
-    "/auth/login": {
-      "post": {
-        "summary": "Log in and receive a JWT",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "email": { "type": "string" },
-                  "password": { "type": "string" }
-                },
-                "required": ["email", "password"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "Login successful, returns access_token" },
-          "400": { "description": "Missing input" },
-          "401": { "description": "Invalid login credentials" }
-        }
-      }
-    },
-    "/auth/logout": {
-      "post": {
-        "summary": "Log out the current user",
-        "security": [{ "bearerAuth": [] }],
-        "responses": {
-          "204": { "description": "Logged out successfully" },
-          "401": { "description": "Missing or invalid token" }
-        }
-      }
-    },
-    "/public/info": {
-      "get": {
-        "summary": "Public info, no auth required",
-        "responses": {
-          "200": { "description": "Public welcome message" }
-        }
-      }
-    },
-    "/protected/profile": {
-      "get": {
-        "summary": "Get the logged-in user's profile",
-        "security": [{ "bearerAuth": [] }],
-        "responses": {
-          "200": { "description": "User profile data" },
-          "401": { "description": "Missing or invalid token" }
-        }
-      }
-    },
-    "/protected/dashboard": {
-      "get": {
-        "summary": "Protected dashboard route",
-        "security": [{ "bearerAuth": [] }],
-        "responses": {
-          "200": { "description": "Dashboard welcome message" },
-          "401": { "description": "Missing or invalid token" }
-        }
-      }
-    },
-    "/tasks": {
-      "get": {
-        "summary": "Get all tasks",
-        "responses": {
-          "200": { "description": "A list of tasks" }
-        }
-      },
-      "post": {
-        "summary": "Create a new task",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "title": { "type": "string" }
-                },
-                "required": ["title"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": { "description": "Task created" },
-          "400": { "description": "Missing or empty title" }
-        }
-      }
-    },
-    "/tasks/{id}": {
-      "get": {
-        "summary": "Get a single task by id",
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
-        ],
-        "responses": {
-          "200": { "description": "The requested task" },
-          "404": { "description": "Task not found" }
-        }
-      },
-      "put": {
-        "summary": "Update a task",
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "title": { "type": "string" },
-                  "done": { "type": "boolean" }
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
                 }
               }
             }
           }
         },
         "responses": {
-          "200": { "description": "Task updated" },
-          "400": { "description": "Invalid body" },
-          "404": { "description": "Task not found" }
+          "201": {
+            "description": "User created"
+          }
         }
-      },
-      "delete": {
-        "summary": "Delete a task",
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+      }
+    },
+
+    "/auth/login": {
+      "post": {
+        "summary": "Log in",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful"
+          }
+        }
+      }
+    },
+
+    "/auth/logout": {
+      "post": {
+        "summary": "Logout",
+        "security": [
+          {
+            "bearerAuth": []
+          }
         ],
         "responses": {
-          "204": { "description": "Task deleted" },
-          "404": { "description": "Task not found" }
+          "204": {
+            "description": "Logged out"
+          }
+        }
+      }
+    },
+
+    "/public/info": {
+      "get": {
+        "summary": "Public endpoint",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+
+    "/protected/profile": {
+      "get": {
+        "summary": "User profile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile"
+          }
+        }
+      }
+    },
+
+    "/protected/dashboard": {
+      "get": {
+        "summary": "Dashboard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dashboard"
+          }
+        }
+      }
+    },
+
+    "/tasks": {
+      "get": {
+        "summary": "Get all tasks",
+        "responses": {
+          "200": {
+            "description": "Task list"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create task",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title"],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Task created"
+          }
+        }
+      }
+    },
+
+    "/tasks/{id}": {
+      "get": {
+        "summary": "Get task",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task found"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        }
+      },
+
+      "put": {
+        "summary": "Update task",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "done": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task updated"
+          }
+        }
+      },
+
+      "delete": {
+        "summary": "Delete task",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Task deleted"
+          }
+        }
+      }
+    },
+
+    "/usage": {
+      "post": {
+        "summary": "Record billable usage",
+        "description": "Records API calls or AI token usage with idempotency protection and quota enforcement.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "tenant_id",
+                  "type",
+                  "quantity",
+                  "idempotency_key"
+                ],
+                "properties": {
+                  "tenant_id": {
+                    "type": "integer",
+                    "example": 1
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "api_call",
+                      "ai_token"
+                    ]
+                  },
+                  "quantity": {
+                    "type": "integer",
+                    "example": 1
+                  },
+                  "idempotency_key": {
+                    "type": "string",
+                    "example": "request-123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usage recorded"
+          },
+          "200": {
+            "description": "Duplicate ignored"
+          },
+          "404": {
+            "description": "Tenant not found"
+          },
+          "429": {
+            "description": "Quota exceeded"
+          }
         }
       }
     }

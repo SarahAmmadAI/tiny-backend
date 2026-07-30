@@ -4,10 +4,11 @@ const app = express();
 const PORT = 3000;
 const swaggerUi = require('swagger-ui-express');
 const openapiDocument = require('./openapi.json');
+console.log(openapiDocument.paths);
 const db = require('./db');
 const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
-
+const billingDb = require('./billing-db');
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY
@@ -116,7 +117,7 @@ function createJob() {
   const id = crypto.randomUUID();
   const job = {
     id,
-    status: "queued", // queued -> processing -> completed | failed
+    status: "queued",
     result: null,
     error: null,
     attempts: 0,
@@ -126,19 +127,17 @@ function createJob() {
   return job;
 }
 
-// Simulates a slow, occasionally-failing task (stand-in for a real AI call)
-// Retries automatically up to MAX_ATTEMPTS before permanently failing
 function simulateSlowWork(job) {
   job.status = "processing";
   job.attempts += 1;
 
   setTimeout(() => {
-    const shouldFail = Math.random() < 0.3; // 30% chance of failure
+    const shouldFail = Math.random() < 0.3;
 
     if (shouldFail) {
       if (job.attempts < MAX_ATTEMPTS) {
         console.log(`Job ${job.id} failed (attempt ${job.attempts}), retrying...`);
-        simulateSlowWork(job); // retry
+        simulateSlowWork(job);
       } else {
         job.status = "failed";
         job.error = `Failed after ${job.attempts} attempts`;
@@ -170,6 +169,79 @@ app.get('/jobs/:id', (req, res) => {
   }
 
   res.status(200).json(job);
+});
+
+// ===== Usage Metering =====
+
+app.post('/usage', (req, res) => {
+  const { tenant_id, type, quantity, idempotency_key } = req.body;
+
+  if (!tenant_id || !type || !quantity || !idempotency_key) {
+    return res.status(400).json({
+      error: "tenant_id, type, quantity, and idempotency_key are all required"
+    });
+  }
+
+  if (type !== "api_call" && type !== "ai_token") {
+    return res.status(400).json({ error: "type must be 'api_call' or 'ai_token'" });
+  }
+
+  const existing = billingDb
+    .prepare('SELECT * FROM usage_events WHERE idempotency_key = ?')
+    .get(idempotency_key);
+
+  if (existing) {
+    return res.status(200).json({ ...existing, deduplicated: true });
+  }
+
+  // Get the tenant and its plan
+const tenant = billingDb.prepare(`
+  SELECT
+    t.id,
+    p.api_call_limit,
+    p.ai_token_limit
+  FROM tenants t
+  JOIN plans p ON t.plan_id = p.id
+  WHERE t.id = ?
+`).get(tenant_id);
+
+if (!tenant) {
+  return res.status(404).json({ error: "Tenant not found" });
+}
+// Calculate how much of this resource has already been used
+const usage = billingDb.prepare(`
+  SELECT COALESCE(SUM(quantity), 0) AS used
+  FROM usage_events
+  WHERE tenant_id = ?
+  AND type = ?
+`).get(tenant_id, type);
+
+const limit =
+  type === "api_call"
+    ? tenant.api_call_limit
+    : tenant.ai_token_limit;
+
+    const projectedUsage = usage.used + quantity;
+
+if (projectedUsage > limit) {
+  return res.status(429).json({
+    error: `${type} quota exceeded`,
+    used: usage.used,
+    limit,
+    requested: quantity
+  });
+}
+
+  const insert = billingDb.prepare(
+    'INSERT INTO usage_events (tenant_id, type, quantity, idempotency_key) VALUES (?, ?, ?, ?)'
+  );
+  const result = insert.run(tenant_id, type, quantity, idempotency_key);
+
+  const event = billingDb
+    .prepare('SELECT * FROM usage_events WHERE id = ?')
+    .get(result.lastInsertRowid);
+
+  res.status(201).json(event);
 });
 
 // Read
